@@ -4,9 +4,13 @@
 
 Welcome to The Prisoner's Duel, an interactive game theory simulator based on the classic Prisoner's Dilemma. This project aims to provide an engaging way to explore fundamental concepts in game theory, decision-making, and strategic interaction.
 
-## Historical Context
+## The Birth of Game Theory
 
-On September 3, 1949, the detection of radioactive material over Japan marked the beginning of a new era in global politics. This discovery, indicating that the Soviet Union had developed nuclear capabilities, led to intense strategic thinking about cooperation and conflict. The Prisoner's Dilemma, formalized by mathematicians at RAND Corporation in 1950, became a powerful tool for analyzing these complex interactions.
+On September 3, 1949, an American weather monitoring plane collected air samples over Japan, finding traces of radioactive material. The United States Navy tested rainwater samples from ships and bases worldwide, detecting small amounts of Cerium-141 and Yttrium-91. These isotopes, with half-lives of one or two months, must have been produced recently, and the only place they could have come from was a nuclear explosion. The United States had not conducted any tests that year, so the only possible conclusion was that the Soviet Union had learned to build a nuclear bomb.
+
+This was the news Americans had feared. Their military supremacy, achieved through the Manhattan Project, was rapidly fading. Some believed the best course of action was to launch an unprovoked nuclear strike against the Soviets while they still had the advantage. According to Navy Secretary Matthews, it was necessary to become "aggressors for peace."
+
+John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma.
 
 ## Game Rules
 
