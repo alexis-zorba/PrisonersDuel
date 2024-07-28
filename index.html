@@ -1,0 +1,562 @@
+<html>
+<head>
+<title>The Prisoner's Duel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=Roboto:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    color: #333;
+    padding: 20px;
+    background: linear-gradient(to right, black 50%, white 50%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.game-container {
+    background-color: white;
+    border-radius: 20px;
+    padding: 30px 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 1200px;
+    width: 90%;
+}
+
+h1 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 3em;
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.game-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 15px 20px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border: none;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+#collaborate, #betray {
+    width: 180px;
+}
+
+#collaborate {
+    background-color: #27ae60;
+    color: white;
+}
+
+#betray {
+    background-color: #e74c3c;
+    color: white;
+}
+
+#reset, #readme, #setup {
+    background-color: #3498db;
+    color: white;
+    margin-top: 20px;
+    width: 30%;
+}
+
+#collaborate:hover { background-color: #2ecc71; }
+#betray:hover { background-color: #c0392b; }
+#reset:hover, #readme:hover { background-color: #2980b9; }
+
+#setup {
+    background-color: #f39c12;
+}
+
+#setup:hover { background-color: #d35400; }
+
+#output {
+    width: 100%;
+    height: 200px;
+    margin-top: 30px;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    resize: none;
+    font-size: 1.1em;
+    line-height: 1.5;
+    background-color: white;
+    color: #34495e;
+}
+
+#rounds {
+    padding: 10px;
+    font-size: 1.1em;
+    border: 2px solid #bdc3c7;
+    border-radius: 50px;
+    background-color: white;
+    color: #34495e;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#rounds:focus {
+    border-color: #3498db;
+}
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    font-size: 1.1em;
+    color: #7f8c8d;
+}
+
+.status span {
+    font-weight: 700;
+    color: #34495e;
+}
+
+.bottom-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.strategy-editors {
+    display: none;
+    margin-top: 20px;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.strategy-editors h3 {
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    color: #2c3e50;
+}
+
+.strategy-editors input, .strategy-editors textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.strategy-editors input {
+    font-family: 'Roboto', sans-serif;
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+    <h1>The Prisoner's Duel</h1>
+    <div class="game-controls">
+        <button id="collaborate">Collaborate</button>
+        <select id="rounds">
+            <option value="5">5 Rounds</option>
+            <option value="10">10 Rounds</option>
+            <option value="20">20 Rounds</option>
+            <option value="50">50 Rounds</option>
+            <option value="100">100 Rounds</option>
+        </select>
+        <button id="betray">Betray</button>
+    </div>
+    <div class="status">
+        <div>Your Score: <span id="userScore">0</span></div>
+        <div>Round: <span id="currentRound">0</span>/<span id="totalRounds">3</span></div>
+        <div>Computer Score: <span id="computerScore">0</span></div>
+    </div>
+    <textarea id="output" readonly></textarea>
+    <div class="bottom-buttons">
+        <button id="reset">Reset Game</button>
+        <button id="setup">Setup</button>
+        <button id="readme">Read Me</button>
+    </div>
+    <div class="strategy-editors">
+        <div>
+            <h3>Strategy 1</h3>
+            <input type="text" id="strat_1Name" placeholder="Strategy Name">
+            <input type="text" id="strat_1Desc" placeholder="Brief Description">
+            <textarea id="strat_1Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 2</h3>
+            <input type="text" id="strat_2Name" placeholder="Strategy Name">
+            <input type="text" id="strat_2Desc" placeholder="Brief Description">
+            <textarea id="strat_2Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 3</h3>
+            <input type="text" id="strat_3Name" placeholder="Strategy Name">
+            <input type="text" id="strat_3Desc" placeholder="Brief Description">
+            <textarea id="strat_3Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 4</h3>
+            <input type="text" id="strat_4Name" placeholder="Strategy Name">
+            <input type="text" id="strat_4Desc" placeholder="Brief Description">
+            <textarea id="strat_4Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 5</h3>
+            <input type="text" id="strat_5Name" placeholder="Strategy Name">
+            <input type="text" id="strat_5Desc" placeholder="Brief Description">
+            <textarea id="strat_5Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 6</h3>
+            <input type="text" id="strat_6Name" placeholder="Strategy Name">
+            <input type="text" id="strat_6Desc" placeholder="Brief Description">
+            <textarea id="strat_6Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 7</h3>
+            <input type="text" id="strat_7Name" placeholder="Strategy Name">
+            <input type="text" id="strat_7Desc" placeholder="Brief Description">
+            <textarea id="strat_7Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 8</h3>
+            <input type="text" id="strat_8Name" placeholder="Strategy Name">
+            <input type="text" id="strat_8Desc" placeholder="Brief Description">
+            <textarea id="strat_8Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+        <div>
+            <h3>Strategy 9</h3>
+            <input type="text" id="strat_9Name" placeholder="Strategy Name">
+            <input type="text" id="strat_9Desc" placeholder="Brief Description">
+            <textarea id="strat_9Code" rows="5" cols="50" placeholder="Strategy Code"></textarea>
+        </div>
+    </div>
+</div>
+
+<script>
+// Definizione delle strutture dati
+const gameState = {
+    userName: "",
+    userPoints: 0,
+    computerPoints: 0,
+    lastUserChoice: null,
+    userChoiceHistory: [],
+    computerStrategyId: null,
+    computerStrategy: null,
+    currentRound: 0,
+    totalRounds: 3,
+    errorInStrategy: false
+};
+
+const names = ["Trusty", "Ethical", "Moral", "Noble", "Virtuous", "Honorable"];
+
+let strategies = [
+    {
+        id: "strat_1",
+        name: "Random",
+        description: "Randomly chooses between collaboration and betrayal",
+        code: "return Math.random() < 0.5 ? 'Collaborate' : 'Betray';"
+    },
+    {
+        id: "strat_2",
+        name: "Tit for Tat",
+        description: "Starts by collaborating, then mimics the opponent's last move",
+        code: "return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice;"
+    },
+    {
+        id: "strat_3",
+        name: "Majority",
+        description: "Chooses the action the opponent has used most frequently",
+        code: "if (gameState.userChoiceHistory.length === 0) return 'Collaborate'; const collaborateCount = gameState.userChoiceHistory.filter(choice => choice === 'Collaborate').length; return collaborateCount >= gameState.userChoiceHistory.length / 2 ? 'Collaborate' : 'Betray';"
+    },
+    {
+        id: "strat_4",
+        name: "Always Cooperate",
+        description: "Always chooses to collaborate, regardless of the opponent's actions.",
+        code: "return 'Collaborate';"
+    },
+    {
+        id: "strat_5",
+        name: "Always Betray",
+        description: "Always chooses to betray, aiming for the highest individual reward.",
+        code: "return 'Betray';"
+    },
+    {
+        id: "strat_6",
+        name: "Grudger",
+        description: "Starts by collaborating but will always betray if the opponent ever betrays.",
+        code: `
+            if (gameState.userChoiceHistory.includes('Betray')) {
+                return 'Betray';
+            } else {
+                return 'Collaborate';
+            }
+        `
+    },
+    {
+        id: "strat_7",
+        name: "Prober",
+        description: "Initially probes with a betrayal, then plays Tit for Tat if the opponent retaliates, otherwise continues to betray.",
+        code: `
+            if (gameState.userChoiceHistory.length === 0) {
+                return 'Betray'; // Initial probe
+            } else if (gameState.userChoiceHistory[0] === 'Betray' && gameState.lastUserChoice === 'Betray') {
+                return 'Collaborate'; // Switch to Tit for Tat if retaliated
+            } else {
+                return 'Betray'; // Continue betraying if not retaliated
+            }
+        `
+    },
+    {
+        id: "strat_8",
+        name: "Pavlovian",
+        description: "Repeats its previous action if it earned a high reward, otherwise switches.",
+        code: `
+            const lastRoundPoints = calculatePoints(gameState.lastUserChoice, gameState.computerStrategy())[1];
+            return lastRoundPoints >= 3 ? gameState.lastUserChoice : (gameState.lastUserChoice === 'Collaborate' ? 'Betray' : 'Collaborate');
+        `
+    },
+    {
+        id: "strat_9",
+        name: "Random Tit for Tat",
+        description: "Mostly plays Tit for Tat but occasionally (e.g., 10%) introduces randomness.",
+        code: `
+            if (Math.random() < 0.1) {
+                return Math.random() < 0.5 ? 'Collaborate' : 'Betray'; // Random choice
+            } else {
+                return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice; // Tit for Tat
+            }
+        `
+    }
+];
+
+// Funzioni di utilità
+function safeStrategy(code, strategyId) {
+    return function() {
+        try {
+            const result = eval(`(function(gameState) { ${code} })(gameState)`);
+            if (result === 'Collaborate' || result === 'Betray') {
+                return result;
+            } else {
+                throw new Error(`Invalid result "${result}". Must be 'Collaborate' or 'Betray'.`);
+            }
+        } catch (error) {
+            const errorMessage = `Error in strategy ${strategyId}: ${error.message}\nStrategy code:\n${code}\nPlease revise the strategy and reset the game.`;
+            document.getElementById("output").value = errorMessage + "\n\n" + document.getElementById("output").value;
+            gameState.errorInStrategy = true;
+            throw error;
+        }
+    }
+}
+
+function calculatePoints(userDecision, computerDecision) {
+    const pointsMapping = {
+        "Collaborate,Collaborate": [3, 3],
+        "Collaborate,Betray": [0, 6],
+        "Betray,Collaborate": [6, 0],
+        "Betray,Betray": [1, 1]
+    };
+    return pointsMapping[`${userDecision},${computerDecision}`];
+}
+
+function updateStatus() {
+    document.getElementById("currentRound").textContent = gameState.currentRound;
+    document.getElementById("totalRounds").textContent = gameState.totalRounds;
+    document.getElementById("userScore").textContent = gameState.userPoints;
+    document.getElementById("computerScore").textContent = gameState.computerPoints;
+}
+
+// Funzioni principali del gioco
+function resetGame() {
+    gameState.userName = names[Math.floor(Math.random() * names.length)];
+    gameState.userPoints = 0;
+    gameState.computerPoints = 0;
+    gameState.lastUserChoice = null;
+    gameState.userChoiceHistory = [];
+    gameState.currentRound = 0;
+    gameState.totalRounds = parseInt(document.getElementById("rounds").value);
+    gameState.errorInStrategy = false;
+    
+    const randomIndex = Math.floor(Math.random() * strategies.length);
+    gameState.computerStrategyId = `strat_${randomIndex + 1}`;
+    
+    try {
+        const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
+        gameState.computerStrategy = safeStrategy(strategy.code, gameState.computerStrategyId);
+        // Test the strategy
+        gameState.computerStrategy();
+        
+        document.getElementById("output").value = `Game started! Welcome, ${gameState.userName}!\nChoose to Collaborate or Betray.\n`;
+        updateStatus();
+    } catch (error) {
+        // L'errore è già stato registrato nell'output dalla funzione safeStrategy
+        gameState.computerStrategy = null;
+    }
+}
+
+function executeRound(userDecision) {
+    if (gameState.errorInStrategy || !gameState.computerStrategy) {
+        document.getElementById("output").value = "Cannot execute round. There's an error in the computer's strategy. Please revise the strategy and reset the game.\n" + document.getElementById("output").value;
+        return;
+    }
+
+    if (gameState.currentRound >= gameState.totalRounds) {
+        document.getElementById("output").value = "The game has ended. Press 'Reset Game' to start a new game.\n" + document.getElementById("output").value;
+        return;
+    }
+
+    let computerDecision;
+    try {
+        computerDecision = gameState.computerStrategy();
+    } catch (error) {
+        // L'errore è già stato registrato nell'output dalla funzione safeStrategy
+        return;
+    }
+    
+    gameState.lastUserChoice = userDecision;
+    gameState.userChoiceHistory.push(userDecision);
+
+    const [userRoundPoints, computerRoundPoints] = calculatePoints(userDecision, computerDecision);
+    gameState.userPoints += userRoundPoints;
+    gameState.computerPoints += computerRoundPoints;
+    gameState.currentRound++;
+
+    document.getElementById("output").value = `Round ${gameState.currentRound}: You ${userDecision}, Computer ${computerDecision}\n` +
+        `Points: You +${userRoundPoints}, Computer +${computerRoundPoints}\n\n` +
+        document.getElementById("output").value;
+
+    updateStatus();
+
+    if (gameState.currentRound === gameState.totalRounds) {
+        announceWinner();
+    }
+}
+
+function announceWinner() {
+    let result;
+    if (gameState.userPoints > gameState.computerPoints) {
+        result = `You win!`;
+    } else if (gameState.userPoints < gameState.computerPoints) {
+        result = "Computer wins!";
+    } else {
+        result = "It's a tie!";
+    }
+    
+    const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
+    
+    document.getElementById("output").value = `Game Over! ${result}\n` +
+        `Computer's strategy: ${strategy.name}\n` +
+        `Strategy description: ${strategy.description}\n\n` +
+        document.getElementById("output").value;
+}
+
+// Gestione dell'interfaccia utente
+let readmeVisible = false;
+
+function toggleReadMe() {
+    const outputElement = document.getElementById("output");
+    if (readmeVisible) {
+        outputElement.value = outputElement.value.replace(readmeText + "\n\n", "");
+        readmeVisible = false;
+    } else {
+        outputElement.value = readmeText + "\n\n" + outputElement.value;
+        readmeVisible = true;
+    }
+}
+
+function toggleSetup() {
+    const strategyEditors = document.querySelector('.strategy-editors');
+    if (strategyEditors.style.display === 'none' || strategyEditors.style.display === '') {
+        strategyEditors.style.display = 'flex';
+        strategies.forEach((strategy) => {
+            document.getElementById(`${strategy.id}Name`).value = strategy.name;
+            document.getElementById(`${strategy.id}Desc`).value = strategy.description;
+            document.getElementById(`${strategy.id}Code`).value = strategy.code.trim();
+        });
+    } else {
+        strategies = strategies.map((strategy) => {
+            const updatedStrategy = {
+                id: strategy.id,
+                name: document.getElementById(`${strategy.id}Name`).value,
+                description: document.getElementById(`${strategy.id}Desc`).value,
+                code: document.getElementById(`${strategy.id}Code`).value.trim()
+            };
+            return updatedStrategy;
+        });
+        strategyEditors.style.display = 'none';
+    }
+}
+
+// Variabili globali
+const readmeText = `On September 3, 1949, an American weather monitoring plane collected air samples over Japan, finding traces of radioactive material. The United States Navy tested rainwater samples from ships and bases worldwide, detecting small amounts of Cerium-141 and Yttrium-91. These isotopes, with half-lives of one or two months, must have been produced recently, and the only place they could have come from was a nuclear explosion. The United States had not conducted any tests that year, so the only possible conclusion was that the Soviet Union had learned to build a nuclear bomb.
+
+This was the news Americans had feared. Their military supremacy, achieved through the Manhattan Project, was rapidly fading. Some believed the best course of action was to launch an unprovoked nuclear strike against the Soviets while they still had the advantage. According to Navy Secretary Matthews, it was necessary to become "aggressors for peace."
+
+The Birth of Game Theory
+John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma.
+
+The Prisoner's Dilemma
+A banker with a chest full of gold coins invites you and another player to play against each other. Each player has two choices: cooperate or defect. If both cooperate, each receives three coins. If one cooperates and the other defects, the defector gets five coins and the cooperator gets nothing. If both defect, each receives one coin. The goal of the game is simple: to get as many coins as possible.
+
+Axelrod's Tournament
+In 1980, Robert Axelrod, a political scientist, organized a computer tournament to discover the best strategy in the repeated prisoner's dilemma game. He invited some of the leading game theorists to submit programs that would play against each other. The strategies faced off for 200 rounds, and the tournament was repeated five times to ensure robust results.
+
+The winning strategy, called "Tit for Tat," started by cooperating and then exactly copied what the opponent did in the previous round. If both cooperated, they continued to cooperate. If one defected, the other defected in the next round but returned to cooperation if the opponent did. This simple but effective strategy won the tournament, demonstrating that cooperation pays off.
+
+Implications and Conclusions
+Axelrod's discoveries have had applications in evolutionary biology and international conflicts. Although Tit for Tat does not always win in every scenario, the principles of being kind, forgiving, but not overly lenient remain valid. Game theory teaches us that cooperation, even among rivals, can lead to better outcomes for everyone.
+
+Game Theory Explanation:
+
+This game is based on the Prisoner's Dilemma, a fundamental concept in game theory. In this scenario, two players must choose to either cooperate or betray the other. The outcomes are:
+
+- If both cooperate, they both gain a moderate reward.
+- If one betrays and the other cooperates, the betrayer gains a large reward while the cooperator gets nothing.
+- If both betray, they both receive a small punishment.
+
+This creates a tension between self-interest and mutual benefit, exploring concepts of trust, cooperation, and strategic decision-making in competitive situations.
+
+Game Simulator:
+
+The simulator is designed to let you play against different strategies implemented in the setup. Each game, a strategy is chosen randomly as your opponent. You can create and modify strategies in the setup section. The goal is to have fun while experimenting with various strategies and understanding their behaviors in a repeated prisoner's dilemma setting.
+
+Variables available for strategy creation:
+- gameState.lastUserChoice: The user's choice in the previous round (null in the first round)
+- gameState.userChoiceHistory: An array of all the user's previous choices
+- gameState.currentRound: The current round number
+- gameState.totalRounds: The total number of rounds in the game
+- gameState.userPoints: The user's current score
+- gameState.computerPoints: The computer's current score
+
+Your strategy should return either 'Collaborate' or 'Betray'.
+
+Remember, if your strategy produces an invalid result, you will be notified to correct the error and reset the game to apply the new settings.
+`;
+
+// Event Listeners
+document.getElementById("collaborate").addEventListener("click", () => executeRound("Collaborate"));
+document.getElementById("betray").addEventListener("click", () => executeRound("Betray"));
+document.getElementById("reset").addEventListener("click", resetGame);
+document.getElementById("setup").addEventListener("click", toggleSetup);
+document.getElementById("readme").addEventListener("click", toggleReadMe);
+document.getElementById("rounds").addEventListener("change", resetGame);
+
+// Inizializzazione del gioco
+resetGame();
+</script>
+</body>
+</html>
