@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Welcome to The Prisoner's Duel, an interactive game theory simulator based on the classic Prisoner's Dilemma. This project aims to provide an engaging way to explore fundamental concepts in game theory, decision-making, and strategic interaction.
+Welcome to The Prisoner's Duel, an interactive game theory simulator based on the classic Prisoner's Dilemma. This project aims to provide an engaging way to explore fundamental concepts in game theory, decision-making, and strategic interaction. Enjoy it here: https://prisonersduel.netlify.app/
 
 ## The Birth of Game Theory
 
