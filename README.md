@@ -72,14 +72,3 @@ The Prisoner's Dilemma has wide-ranging applications, including:
 
 By playing this game and experimenting with different strategies, you can gain insights into these real-world scenarios and the complex dynamics of cooperation and conflict.
 
-## Getting Started
-
-[Include instructions on how to run the game, any dependencies, etc.]
-
-## Contributing
-
-We welcome contributions! If you have ideas for new strategies, improvements to the interface, or other enhancements, please feel free to submit a pull request.
-
-## License
-
-[Include your chosen license information here]
