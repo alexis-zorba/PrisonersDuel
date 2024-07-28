@@ -1,4 +1,4 @@
-# The Prisoner's Duel: An Interactive Game Theory Simulator in one html page
+# The Prisoner's Duel: An Interactive Game Theory Simulator in one html page (with javascript)
 
 ## Introduction
 
