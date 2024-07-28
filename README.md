@@ -10,7 +10,7 @@ On September 3, 1949, an American weather monitoring plane collected air samples
 
 This was the news Americans had feared. Their military supremacy, achieved through the Manhattan Project, was rapidly fading. Some believed the best course of action was to launch an unprovoked nuclear strike against the Soviets while they still had the advantage. According to Navy Secretary Matthews, it was necessary to become "aggressors for peace."
 
-John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma.
+John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma. (more info here: https://youtu.be/mScpHTIi-kM?si=QtC0tk1n70no37os)
 
 ## Game Rules
 
