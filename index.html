@@ -272,316 +272,363 @@ footer {
 </div>
 
 <script>
-// Definizione delle strutture dati
-const gameState = {
-    userName: "",
-    userPoints: 0,
-    computerPoints: 0,
-    lastUserChoice: null,
-    userChoiceHistory: [],
-    computerStrategyId: null,
-    computerStrategy: null,
-    currentRound: 0,
-    totalRounds: 3,
-    errorInStrategy: false
-};
-
-const names = ["Trusty", "Ethical", "Moral", "Noble", "Virtuous", "Honorable"];
-
-let strategies = [
-    {
-        id: "strat_1",
-        name: "Random",
-        description: "Randomly chooses between collaboration and betrayal",
-        code: "return Math.random() < 0.5 ? 'Collaborate' : 'Betray';"
-    },
-    {
-        id: "strat_2",
-        name: "Tit for Tat",
-        description: "Starts by collaborating, then mimics the opponent's last move",
-        code: "return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice;"
-    },
-    {
-        id: "strat_3",
-        name: "Majority",
-        description: "Chooses the action the opponent has used most frequently",
-        code: "if (gameState.userChoiceHistory.length === 0) return 'Collaborate'; const collaborateCount = gameState.userChoiceHistory.filter(choice => choice === 'Collaborate').length; return collaborateCount >= gameState.userChoiceHistory.length / 2 ? 'Collaborate' : 'Betray';"
-    },
-    {
-        id: "strat_4",
-        name: "Always Cooperate",
-        description: "Always chooses to collaborate, regardless of the opponent's actions.",
-        code: "return 'Collaborate';"
-    },
-    {
-        id: "strat_5",
-        name: "Always Betray",
-        description: "Always chooses to betray, aiming for the highest individual reward.",
-        code: "return 'Betray';"
-    },
-    {
-        id: "strat_6",
-        name: "Grudger",
-        description: "Starts by collaborating but will always betray if the opponent ever betrays.",
-        code: `
-            if (gameState.userChoiceHistory.includes('Betray')) {
-                return 'Betray';
-            } else {
-                return 'Collaborate';
+    // Definizione dello stato del gioco
+    const gameState = {
+        userName: "",
+        userPoints: 0,
+        computerPoints: 0,
+        lastUserChoice: null,
+        userChoiceHistory: [],
+        computerStrategyId: null,
+        computerStrategy: null,
+        currentRound: 0,
+        totalRounds: 3,
+        errorInStrategy: false,
+    
+        // Variabili per la strategia Pavlovian (o altre):
+        lastComputerChoice: null,   // memorizza la mossa effettiva del computer nel round precedente
+        lastComputerPoints: 0       // memorizza il punteggio totale del computer PRIMA del round precedente
+    };
+    
+    // Alcuni possibili nomi casuali da assegnare all'utente
+    const names = ["Trusty", "Ethical", "Moral", "Noble", "Virtuous", "Honorable"];
+    
+    // Elenco delle strategie disponibili
+    let strategies = [
+        {
+            id: "strat_1",
+            name: "Random",
+            description: "Randomly chooses between collaboration and betrayal",
+            code: "return Math.random() < 0.5 ? 'Collaborate' : 'Betray';"
+        },
+        {
+            id: "strat_2",
+            name: "Tit for Tat",
+            description: "Starts by collaborating, then mimics the opponent's last move",
+            code: "return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice;"
+        },
+        {
+            id: "strat_3",
+            name: "Majority",
+            description: "Chooses the action the opponent has used most frequently",
+            code: "if (gameState.userChoiceHistory.length === 0) return 'Collaborate'; const cCount = gameState.userChoiceHistory.filter(c => c === 'Collaborate').length; return cCount >= gameState.userChoiceHistory.length / 2 ? 'Collaborate' : 'Betray';"
+        },
+        {
+            id: "strat_4",
+            name: "Always Cooperate",
+            description: "Always chooses to collaborate, regardless of the opponent's actions.",
+            code: "return 'Collaborate';"
+        },
+        {
+            id: "strat_5",
+            name: "Always Betray",
+            description: "Always chooses to betray, aiming for the highest individual reward.",
+            code: "return 'Betray';"
+        },
+        {
+            id: "strat_6",
+            name: "Grudger",
+            description: "Starts by collaborating but will always betray if the opponent ever betrays.",
+            code: `
+                if (gameState.userChoiceHistory.includes('Betray')) {
+                    return 'Betray';
+                } else {
+                    return 'Collaborate';
+                }
+            `
+        },
+        {
+            id: "strat_7",
+            name: "Prober",
+            description: "Initially probes with a betrayal, then plays Tit for Tat if the opponent retaliates, otherwise continues to betray.",
+            code: `
+                if (gameState.userChoiceHistory.length === 0) {
+                    return 'Betray'; // Initial probe
+                } else if (gameState.userChoiceHistory[0] === 'Betray' && gameState.lastUserChoice === 'Betray') {
+                    return 'Collaborate'; // Switch to Tit for Tat if retaliated
+                } else {
+                    return 'Betray'; // Continue betraying if not retaliated
+                }
+            `
+        },
+        {
+            id: "strat_8",
+            name: "Pavlovian",
+            description: "Repeats its previous action if it earned a high reward, otherwise switches (win–stay, lose–switch).",
+            code: `
+                if (!gameState.lastComputerChoice) {
+                    // Primo round: non abbiamo storico, collaboriamo
+                    return 'Collaborate';
+                }
+                // Calcolo dei punti ottenuti nel round precedente
+                const lastRoundPoints = gameState.computerPoints - gameState.lastComputerPoints;
+                // Se >= 3 punti, "win–stay"; se < 3, "lose–switch"
+                return lastRoundPoints >= 3
+                    ? gameState.lastComputerChoice
+                    : (gameState.lastComputerChoice === 'Collaborate' ? 'Betray' : 'Collaborate');
+            `
+        },
+        {
+            id: "strat_9",
+            name: "Random Tit for Tat",
+            description: "Mostly plays Tit for Tat but occasionally introduces randomness (10%).",
+            code: `
+                if (Math.random() < 0.1) {
+                    return Math.random() < 0.5 ? 'Collaborate' : 'Betray';
+                } else {
+                    return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice;
+                }
+            `
+        }
+    ];
+    
+    // Funzioni di utilità
+    function safeStrategy(code, strategyId) {
+        return function() {
+            try {
+                const result = eval(`(function(gameState) { ${code} })(gameState)`);
+                if (result === 'Collaborate' || result === 'Betray') {
+                    return result;
+                } else {
+                    throw new Error(`Invalid result "${result}". Must be 'Collaborate' or 'Betray'.`);
+                }
+            } catch (error) {
+                const errorMessage = `Error in strategy ${strategyId}: ${error.message}\nStrategy code:\n${code}\nPlease revise the strategy and reset the game.`;
+                document.getElementById("output").value =
+                    errorMessage + "\n\n" + document.getElementById("output").value;
+                gameState.errorInStrategy = true;
+                throw error;
             }
-        `
-    },
-    {
-        id: "strat_7",
-        name: "Prober",
-        description: "Initially probes with a betrayal, then plays Tit for Tat if the opponent retaliates, otherwise continues to betray.",
-        code: `
-            if (gameState.userChoiceHistory.length === 0) {
-                return 'Betray'; // Initial probe
-            } else if (gameState.userChoiceHistory[0] === 'Betray' && gameState.lastUserChoice === 'Betray') {
-                return 'Collaborate'; // Switch to Tit for Tat if retaliated
-            } else {
-                return 'Betray'; // Continue betraying if not retaliated
-            }
-        `
-    },
-    {
-        id: "strat_8",
-        name: "Pavlovian",
-        description: "Repeats its previous action if it earned a high reward, otherwise switches.",
-        code: `
-            const lastRoundPoints = calculatePoints(gameState.lastUserChoice, gameState.computerStrategy())[1];
-            return lastRoundPoints >= 3 ? gameState.lastUserChoice : (gameState.lastUserChoice === 'Collaborate' ? 'Betray' : 'Collaborate');
-        `
-    },
-    {
-        id: "strat_9",
-        name: "Random Tit for Tat",
-        description: "Mostly plays Tit for Tat but occasionally (e.g., 10%) introduces randomness.",
-        code: `
-            if (Math.random() < 0.1) {
-                return Math.random() < 0.5 ? 'Collaborate' : 'Betray'; // Random choice
-            } else {
-                return gameState.lastUserChoice === null ? 'Collaborate' : gameState.lastUserChoice; // Tit for Tat
-            }
-        `
+        };
     }
-];
-
-// Funzioni di utilità
-function safeStrategy(code, strategyId) {
-    return function() {
+    
+    // **Matrice dei payoff corretta** per il dilemma del prigioniero classico
+    function calculatePoints(userDecision, computerDecision) {
+        const pointsMapping = {
+            "Collaborate,Collaborate": [3, 3],
+            "Collaborate,Betray": [0, 5],   // 0 a chi collabora, 5 a chi tradisce
+            "Betray,Collaborate": [5, 0],   // 5 a chi tradisce, 0 a chi collabora
+            "Betray,Betray": [1, 1]
+        };
+        return pointsMapping[`${userDecision},${computerDecision}`];
+    }
+    
+    function updateStatus() {
+        document.getElementById("currentRound").textContent = gameState.currentRound;
+        document.getElementById("totalRounds").textContent = gameState.totalRounds;
+        document.getElementById("userScore").textContent = gameState.userPoints;
+        document.getElementById("computerScore").textContent = gameState.computerPoints;
+    }
+    
+    // Funzioni principali del gioco
+    function resetGame() {
+        gameState.userName = names[Math.floor(Math.random() * names.length)];
+        gameState.userPoints = 0;
+        gameState.computerPoints = 0;
+        gameState.lastUserChoice = null;
+        gameState.userChoiceHistory = [];
+        gameState.currentRound = 0;
+        gameState.totalRounds = parseInt(document.getElementById("rounds").value);
+        gameState.errorInStrategy = false;
+    
+        // Reset per la strategia Pavlovian (o altre)
+        gameState.lastComputerChoice = null;
+        gameState.lastComputerPoints = 0;
+    
+        // Seleziona una strategia casuale per il computer
+        const randomIndex = Math.floor(Math.random() * strategies.length);
+        gameState.computerStrategyId = `strat_${randomIndex + 1}`;
+    
         try {
-            const result = eval(`(function(gameState) { ${code} })(gameState)`);
-            if (result === 'Collaborate' || result === 'Betray') {
-                return result;
-            } else {
-                throw new Error(`Invalid result "${result}". Must be 'Collaborate' or 'Betray'.`);
-            }
+            const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
+            gameState.computerStrategy = safeStrategy(strategy.code, gameState.computerStrategyId);
+            // Test preliminare (verifica che la strategia non generi errori)
+            gameState.computerStrategy();
+    
+            document.getElementById("output").value =
+                `Game started! Welcome, ${gameState.userName}!\nChoose to Collaborate or Betray.\n`;
+            updateStatus();
         } catch (error) {
-            const errorMessage = `Error in strategy ${strategyId}: ${error.message}\nStrategy code:\n${code}\nPlease revise the strategy and reset the game.`;
-            document.getElementById("output").value = errorMessage + "\n\n" + document.getElementById("output").value;
-            gameState.errorInStrategy = true;
-            throw error;
+            // L'errore viene già gestito in safeStrategy
+            gameState.computerStrategy = null;
         }
     }
-}
-
-function calculatePoints(userDecision, computerDecision) {
-    const pointsMapping = {
-        "Collaborate,Collaborate": [3, 3],
-        "Collaborate,Betray": [0, 6],
-        "Betray,Collaborate": [6, 0],
-        "Betray,Betray": [1, 1]
-    };
-    return pointsMapping[`${userDecision},${computerDecision}`];
-}
-
-function updateStatus() {
-    document.getElementById("currentRound").textContent = gameState.currentRound;
-    document.getElementById("totalRounds").textContent = gameState.totalRounds;
-    document.getElementById("userScore").textContent = gameState.userPoints;
-    document.getElementById("computerScore").textContent = gameState.computerPoints;
-}
-
-// Funzioni principali del gioco
-function resetGame() {
-    gameState.userName = names[Math.floor(Math.random() * names.length)];
-    gameState.userPoints = 0;
-    gameState.computerPoints = 0;
-    gameState.lastUserChoice = null;
-    gameState.userChoiceHistory = [];
-    gameState.currentRound = 0;
-    gameState.totalRounds = parseInt(document.getElementById("rounds").value);
-    gameState.errorInStrategy = false;
     
-    const randomIndex = Math.floor(Math.random() * strategies.length);
-    gameState.computerStrategyId = `strat_${randomIndex + 1}`;
+    function executeRound(userDecision) {
+        if (gameState.errorInStrategy || !gameState.computerStrategy) {
+            document.getElementById("output").value =
+                "Cannot execute round. There's an error in the computer's strategy. Please revise the strategy and reset the game.\n"
+                + document.getElementById("output").value;
+            return;
+        }
     
-    try {
-        const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
-        gameState.computerStrategy = safeStrategy(strategy.code, gameState.computerStrategyId);
-        // Test the strategy
-        gameState.computerStrategy();
-        
-        document.getElementById("output").value = `Game started! Welcome, ${gameState.userName}!\nChoose to Collaborate or Betray.\n`;
+        if (gameState.currentRound >= gameState.totalRounds) {
+            document.getElementById("output").value =
+                "The game has ended. Press 'Reset Game' to start a new game.\n"
+                + document.getElementById("output").value;
+            return;
+        }
+    
+        // Salva i punti del computer prima dell'aggiornamento
+        const previousComputerPoints = gameState.computerPoints;
+    
+        // Ottieni la decisione del computer dalla sua strategia
+        let computerDecision;
+        try {
+            computerDecision = gameState.computerStrategy();
+        } catch (error) {
+            // Se la strategia ha generato un errore, è stato già loggato
+            return;
+        }
+    
+        // Aggiorna la storia delle mosse dell'utente
+        gameState.lastUserChoice = userDecision;
+        gameState.userChoiceHistory.push(userDecision);
+    
+        // Calcola i punti da assegnare in base alle scelte
+        const [userRoundPoints, computerRoundPoints] = calculatePoints(userDecision, computerDecision);
+        gameState.userPoints += userRoundPoints;
+        gameState.computerPoints += computerRoundPoints;
+        gameState.currentRound++;
+    
+        // Memorizza l'ultima mossa e i punti precedenti del computer
+        gameState.lastComputerChoice = computerDecision;
+        gameState.lastComputerPoints = previousComputerPoints;
+    
+        // Mostra i risultati di questo round
+        document.getElementById("output").value =
+            `Round ${gameState.currentRound}: You ${userDecision}, Computer ${computerDecision}\n`
+            + `Points: You +${userRoundPoints}, Computer +${computerRoundPoints}\n\n`
+            + document.getElementById("output").value;
+    
         updateStatus();
-    } catch (error) {
-        // L'errore è già stato registrato nell'output dalla funzione safeStrategy
-        gameState.computerStrategy = null;
-    }
-}
-
-function executeRound(userDecision) {
-    if (gameState.errorInStrategy || !gameState.computerStrategy) {
-        document.getElementById("output").value = "Cannot execute round. There's an error in the computer's strategy. Please revise the strategy and reset the game.\n" + document.getElementById("output").value;
-        return;
-    }
-
-    if (gameState.currentRound >= gameState.totalRounds) {
-        document.getElementById("output").value = "The game has ended. Press 'Reset Game' to start a new game.\n" + document.getElementById("output").value;
-        return;
-    }
-
-    let computerDecision;
-    try {
-        computerDecision = gameState.computerStrategy();
-    } catch (error) {
-        // L'errore è già stato registrato nell'output dalla funzione safeStrategy
-        return;
+    
+        // Se abbiamo raggiunto l'ultimo round, annunciamo il vincitore
+        if (gameState.currentRound === gameState.totalRounds) {
+            announceWinner();
+        }
     }
     
-    gameState.lastUserChoice = userDecision;
-    gameState.userChoiceHistory.push(userDecision);
-
-    const [userRoundPoints, computerRoundPoints] = calculatePoints(userDecision, computerDecision);
-    gameState.userPoints += userRoundPoints;
-    gameState.computerPoints += computerRoundPoints;
-    gameState.currentRound++;
-
-    document.getElementById("output").value = `Round ${gameState.currentRound}: You ${userDecision}, Computer ${computerDecision}\n` +
-        `Points: You +${userRoundPoints}, Computer +${computerRoundPoints}\n\n` +
-        document.getElementById("output").value;
-
-    updateStatus();
-
-    if (gameState.currentRound === gameState.totalRounds) {
-        announceWinner();
-    }
-}
-
-function announceWinner() {
-    let result;
-    if (gameState.userPoints > gameState.computerPoints) {
-        result = `You win!`;
-    } else if (gameState.userPoints < gameState.computerPoints) {
-        result = "Computer wins!";
-    } else {
-        result = "It's a tie!";
+    function announceWinner() {
+        let result;
+        if (gameState.userPoints > gameState.computerPoints) {
+            result = "You win!";
+        } else if (gameState.userPoints < gameState.computerPoints) {
+            result = "Computer wins!";
+        } else {
+            result = "It's a tie!";
+        }
+    
+        // Mostra il nome e la descrizione della strategia avversaria
+        const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
+    
+        document.getElementById("output").value =
+            `Game Over! ${result}\n`
+            + `Computer's strategy: ${strategy.name}\n`
+            + `Strategy description: ${strategy.description}\n`
+            // RIGA AGGIUNTIVA per mostrare l'ultima mossa del computer
+            + `Computer's last choice: ${gameState.lastComputerChoice || 'None'}\n\n`
+            + document.getElementById("output").value;
     }
     
-    const strategy = strategies.find(s => s.id === gameState.computerStrategyId);
+    // Gestione dell'interfaccia utente
+    let readmeVisible = false;
     
-    document.getElementById("output").value = `Game Over! ${result}\n` +
-        `Computer's strategy: ${strategy.name}\n` +
-        `Strategy description: ${strategy.description}\n\n` +
-        document.getElementById("output").value;
-}
-
-// Gestione dell'interfaccia utente
-let readmeVisible = false;
-
-function toggleReadMe() {
-    const outputElement = document.getElementById("output");
-    if (readmeVisible) {
-        outputElement.value = outputElement.value.replace(readmeText + "\n\n", "");
-        readmeVisible = false;
-    } else {
-        outputElement.value = readmeText + "\n\n" + outputElement.value;
-        readmeVisible = true;
+    // Testo "Read Me" (aggiornato con i payoff corretti: 5 e 0)
+    const readmeText = `On September 3, 1949, an American weather monitoring plane collected air samples over Japan, finding traces of radioactive material. The United States Navy tested rainwater samples from ships and bases worldwide, detecting small amounts of Cerium-141 and Yttrium-91. These isotopes, with half-lives of one or two months, must have been produced recently, and the only place they could have come from was a nuclear explosion. The United States had not conducted any tests that year, so the only possible conclusion was that the Soviet Union had learned to build a nuclear bomb.
+    
+    This was the news Americans had feared. Their military supremacy, achieved through the Manhattan Project, was rapidly fading. Some believed the best course of action was to launch an unprovoked nuclear strike against the Soviets while they still had the advantage. According to Navy Secretary Matthews, it was necessary to become "aggressors for peace."
+    
+    The Birth of Game Theory
+    John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma.
+    
+    The Prisoner's Dilemma
+    A banker with a chest full of gold coins invites you and another player to play against each other. Each player has two choices: cooperate or defect. If both cooperate, each receives three coins. If one cooperates and the other defects, the defector gets five coins and the cooperator gets nothing. If both defect, each receives one coin. The goal of the game is simple: to get as many coins as possible.
+    
+    Axelrod's Tournament
+    In 1980, Robert Axelrod, a political scientist, organized a computer tournament to discover the best strategy in the repeated prisoner's dilemma game. He invited some of the leading game theorists to submit programs that would play against each other. The strategies faced off for 200 rounds, and the tournament was repeated five times to ensure robust results.
+    
+    The winning strategy, called "Tit for Tat," started by cooperating and then exactly copied what the opponent did in the previous round. If both cooperated, they continued to cooperate. If one defected, the other defected in the next round but returned to cooperation if the opponent did. This simple but effective strategy won the tournament, demonstrating that cooperation pays off.
+    
+    Implications and Conclusions
+    Axelrod's discoveries have had applications in evolutionary biology and international conflicts. Although Tit for Tat does not always win in every scenario, the principles of being kind, forgiving, but not overly lenient remain valid. Game theory teaches us that cooperation, even among rivals, can lead to better outcomes for everyone.
+    
+    Game Theory Explanation:
+    
+    This game is based on the Prisoner's Dilemma, a fundamental concept in game theory. In this scenario, two players must choose to either cooperate or betray the other. The outcomes are:
+    
+    - If both cooperate, they both gain a moderate reward (3 points each).
+    - If one betrays and the other cooperates, the betrayer gains a large reward (5 points) while the cooperator gets nothing (0 points).
+    - If both betray, they both receive a small punishment (1 point each).
+    
+    This creates a tension between self-interest and mutual benefit, exploring concepts of trust, cooperation, and strategic decision-making in competitive situations.
+    
+    Game Simulator:
+    
+    The simulator is designed to let you play against different strategies implemented in the setup. Each game, a strategy is chosen randomly as your opponent. You can create and modify strategies in the setup section. The goal is to have fun while experimenting with various strategies and understanding their behaviors in a repeated Prisoner's Dilemma setting.
+    
+    Variables available for strategy creation:
+    - gameState.lastUserChoice: The user's choice in the previous round (null in the first round)
+    - gameState.userChoiceHistory: An array of all the user's previous choices
+    - gameState.currentRound: The current round number
+    - gameState.totalRounds: The total number of rounds in the game
+    - gameState.userPoints: The user's current score
+    - gameState.computerPoints: The computer's current score
+    - gameState.lastComputerChoice: The computer's choice in the previous round
+    - gameState.lastComputerPoints: The computer's total points before the last round
+    
+    Your strategy must return either 'Collaborate' or 'Betray'.
+    
+    Remember, if your strategy produces an invalid result, you will be notified to correct the error and reset the game to apply the new settings.
+    `;
+    
+    function toggleReadMe() {
+        const outputElement = document.getElementById("output");
+        if (readmeVisible) {
+            outputElement.value = outputElement.value.replace(readmeText + "\n\n", "");
+            readmeVisible = false;
+        } else {
+            outputElement.value = readmeText + "\n\n" + outputElement.value;
+            readmeVisible = true;
+        }
     }
-}
-
-function toggleSetup() {
-    const strategyEditors = document.querySelector('.strategy-editors');
-    if (strategyEditors.style.display === 'none' || strategyEditors.style.display === '') {
-        strategyEditors.style.display = 'flex';
-        strategies.forEach((strategy) => {
-            document.getElementById(`${strategy.id}Name`).value = strategy.name;
-            document.getElementById(`${strategy.id}Desc`).value = strategy.description;
-            document.getElementById(`${strategy.id}Code`).value = strategy.code.trim();
-        });
-    } else {
-        strategies = strategies.map((strategy) => {
-            const updatedStrategy = {
-                id: strategy.id,
-                name: document.getElementById(`${strategy.id}Name`).value,
-                description: document.getElementById(`${strategy.id}Desc`).value,
-                code: document.getElementById(`${strategy.id}Code`).value.trim()
-            };
-            return updatedStrategy;
-        });
-        strategyEditors.style.display = 'none';
+    
+    function toggleSetup() {
+        const strategyEditors = document.querySelector('.strategy-editors');
+        if (strategyEditors.style.display === 'none' || strategyEditors.style.display === '') {
+            strategyEditors.style.display = 'flex';
+            strategies.forEach((strategy) => {
+                document.getElementById(`${strategy.id}Name`).value = strategy.name;
+                document.getElementById(`${strategy.id}Desc`).value = strategy.description;
+                document.getElementById(`${strategy.id}Code`).value = strategy.code.trim();
+            });
+        } else {
+            strategies = strategies.map((strategy) => {
+                const updatedStrategy = {
+                    id: strategy.id,
+                    name: document.getElementById(`${strategy.id}Name`).value,
+                    description: document.getElementById(`${strategy.id}Desc`).value,
+                    code: document.getElementById(`${strategy.id}Code`).value.trim()
+                };
+                return updatedStrategy;
+            });
+            strategyEditors.style.display = 'none';
+        }
     }
-}
+    
+    // Event Listeners per i pulsanti e la select
+    document.getElementById("collaborate").addEventListener("click", () => executeRound("Collaborate"));
+    document.getElementById("betray").addEventListener("click", () => executeRound("Betray"));
+    document.getElementById("reset").addEventListener("click", resetGame);
+    document.getElementById("setup").addEventListener("click", toggleSetup);
+    document.getElementById("readme").addEventListener("click", toggleReadMe);
+    document.getElementById("rounds").addEventListener("change", resetGame);
+    
+    // Inizializzazione del gioco
+    resetGame();
+    </script>
+    
 
-// Variabili globali
-const readmeText = `On September 3, 1949, an American weather monitoring plane collected air samples over Japan, finding traces of radioactive material. The United States Navy tested rainwater samples from ships and bases worldwide, detecting small amounts of Cerium-141 and Yttrium-91. These isotopes, with half-lives of one or two months, must have been produced recently, and the only place they could have come from was a nuclear explosion. The United States had not conducted any tests that year, so the only possible conclusion was that the Soviet Union had learned to build a nuclear bomb.
-
-This was the news Americans had feared. Their military supremacy, achieved through the Manhattan Project, was rapidly fading. Some believed the best course of action was to launch an unprovoked nuclear strike against the Soviets while they still had the advantage. According to Navy Secretary Matthews, it was necessary to become "aggressors for peace."
-
-The Birth of Game Theory
-John von Neumann, the founder of game theory, stated: "If you say why not bomb them tomorrow, I say why not bomb them today? If you say today at five o'clock, I say why not at one o'clock?" Something needed to be done about nuclear weapons, and quickly. In 1950, the RAND Corporation, a US-based think tank, studied this question using game theory. That same year, two mathematicians at RAND invented a new game that, unbeknownst to them at the time, closely resembled the US-Soviet conflict. This game is now known as the prisoner's dilemma.
-
-The Prisoner's Dilemma
-A banker with a chest full of gold coins invites you and another player to play against each other. Each player has two choices: cooperate or defect. If both cooperate, each receives three coins. If one cooperates and the other defects, the defector gets five coins and the cooperator gets nothing. If both defect, each receives one coin. The goal of the game is simple: to get as many coins as possible.
-
-Axelrod's Tournament
-In 1980, Robert Axelrod, a political scientist, organized a computer tournament to discover the best strategy in the repeated prisoner's dilemma game. He invited some of the leading game theorists to submit programs that would play against each other. The strategies faced off for 200 rounds, and the tournament was repeated five times to ensure robust results.
-
-The winning strategy, called "Tit for Tat," started by cooperating and then exactly copied what the opponent did in the previous round. If both cooperated, they continued to cooperate. If one defected, the other defected in the next round but returned to cooperation if the opponent did. This simple but effective strategy won the tournament, demonstrating that cooperation pays off.
-
-Implications and Conclusions
-Axelrod's discoveries have had applications in evolutionary biology and international conflicts. Although Tit for Tat does not always win in every scenario, the principles of being kind, forgiving, but not overly lenient remain valid. Game theory teaches us that cooperation, even among rivals, can lead to better outcomes for everyone.
-
-Game Theory Explanation:
-
-This game is based on the Prisoner's Dilemma, a fundamental concept in game theory. In this scenario, two players must choose to either cooperate or betray the other. The outcomes are:
-
-- If both cooperate, they both gain a moderate reward.
-- If one betrays and the other cooperates, the betrayer gains a large reward while the cooperator gets nothing.
-- If both betray, they both receive a small punishment.
-
-This creates a tension between self-interest and mutual benefit, exploring concepts of trust, cooperation, and strategic decision-making in competitive situations.
-
-Game Simulator:
-
-The simulator is designed to let you play against different strategies implemented in the setup. Each game, a strategy is chosen randomly as your opponent. You can create and modify strategies in the setup section. The goal is to have fun while experimenting with various strategies and understanding their behaviors in a repeated prisoner's dilemma setting.
-
-Variables available for strategy creation:
-- gameState.lastUserChoice: The user's choice in the previous round (null in the first round)
-- gameState.userChoiceHistory: An array of all the user's previous choices
-- gameState.currentRound: The current round number
-- gameState.totalRounds: The total number of rounds in the game
-- gameState.userPoints: The user's current score
-- gameState.computerPoints: The computer's current score
-
-Your strategy should return either 'Collaborate' or 'Betray'.
-
-Remember, if your strategy produces an invalid result, you will be notified to correct the error and reset the game to apply the new settings.
-`;
-
-// Event Listeners
-document.getElementById("collaborate").addEventListener("click", () => executeRound("Collaborate"));
-document.getElementById("betray").addEventListener("click", () => executeRound("Betray"));
-document.getElementById("reset").addEventListener("click", resetGame);
-document.getElementById("setup").addEventListener("click", toggleSetup);
-document.getElementById("readme").addEventListener("click", toggleReadMe);
-document.getElementById("rounds").addEventListener("change", resetGame);
-
-// Inizializzazione del gioco
-resetGame();
-</script>
 
 
 <footer>
